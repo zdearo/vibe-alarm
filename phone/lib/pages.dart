@@ -293,7 +293,9 @@ class AlarmsBody extends StatelessWidget {
         Expanded(child: Text('Alarmes', style: display(24))),
         IconButton(
           tooltip: 'Ajustes',
-          icon: const Icon(Icons.tune, color: muted),
+          alignment: Alignment.centerRight,
+          padding: EdgeInsets.zero,
+          icon: const Icon(Icons.settings_outlined, color: muted),
           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(repo))),
         ),
       ]),
