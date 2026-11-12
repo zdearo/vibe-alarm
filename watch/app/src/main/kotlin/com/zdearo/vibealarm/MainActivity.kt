@@ -2,11 +2,13 @@ package com.zdearo.vibealarm
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.util.TypedValue
@@ -49,7 +51,7 @@ class MainActivity : Activity() {
         k = Ui.scale(this)
         screenW = resources.displayMetrics.widthPixels
         screenH = resources.displayMetrics.heightPixels
-        requestPermissions(
+        if (intent.data?.scheme == "pulso") openFix(intent.data?.lastPathSegment) else requestPermissions(
             buildList {
                 add(Manifest.permission.ACTIVITY_RECOGNITION)
                 if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
@@ -80,6 +82,20 @@ class MainActivity : Activity() {
             }
         })
         paintDots()
+    }
+
+    /**
+     * Vem do botão da checagem de boa-noite no celular. Neste Galaxy Watch a única tela de bateria que abre por
+     * intent é a "Bateria" da Samsung (onde fica "Aplicativos suspensos", mais abaixo; a lista em si não é exportada).
+     * Para o resto só existe "detalhes do app": bateria/sobreposição/notificação específicas viram stub ou não abrem.
+     */
+    private fun openFix(kind: String?) {
+        val details = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+        try {
+            startActivity(if (kind == "battery" || kind == "suspended") Intent("com.samsung.android.action.OPEN_BATTERY_MAIN") else details)
+        } catch (e: ActivityNotFoundException) {
+            startActivity(details) // relógio que não é Samsung
+        }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {

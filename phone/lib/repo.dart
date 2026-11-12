@@ -24,12 +24,20 @@ class AlarmRepo extends ChangeNotifier {
     final now = DateTime.now().millisecondsSinceEpoch;
     List<Alarm> list;
     try {
-      list = (jsonDecode(p.getString('alarms') ?? '[]') as List).map((e) => Alarm.fromJson(e as Map<String, dynamic>)).toList();
+      list = (jsonDecode(p.getString('alarms') ?? '[]') as List)
+          .map((e) => Alarm.fromJson(e as Map<String, dynamic>))
+          .toList();
     } catch (_) {
-      list = []; // dados locais corrompidos: começa vazio em vez de travar o app
+      list =
+          []; // dados locais corrompidos: começa vazio em vez de travar o app
     }
     // Alarme de uma vez que já tocou aparece desligado.
-    list = [for (final a in list) a.days.isEmpty && a.enabled && a.at <= now ? a.copyWith(enabled: false) : a];
+    list = [
+      for (final a in list)
+        a.days.isEmpty && a.enabled && a.at <= now
+            ? a.copyWith(enabled: false)
+            : a,
+    ];
     return AlarmRepo._(p, list);
   }
 
@@ -51,18 +59,20 @@ class AlarmRepo extends ChangeNotifier {
   }
 
   Alarm newAlarm() => Alarm(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        hour: 7,
-        minute: 0,
-        days: const {1, 2, 3, 4, 5},
-        intensity: defIntensity,
-        rampSeconds: defRamp,
-        walkSeconds: defWalk,
-        timeoutMin: defTimeout,
-      );
+    id: DateTime.now().microsecondsSinceEpoch.toString(),
+    hour: 7,
+    minute: 0,
+    days: const {1, 2, 3, 4, 5},
+    intensity: defIntensity,
+    rampSeconds: defRamp,
+    walkSeconds: defWalk,
+    timeoutMin: defTimeout,
+  );
 
   Future<void> upsert(Alarm a) {
-    final fixed = a.days.isEmpty && a.enabled ? a.copyWith(at: Alarm.onceAt(a.hour, a.minute, DateTime.now())) : a;
+    final fixed = a.days.isEmpty && a.enabled
+        ? a.copyWith(at: Alarm.onceAt(a.hour, a.minute, DateTime.now()))
+        : a;
     final i = alarms.indexWhere((x) => x.id == a.id);
     alarms = [...alarms];
     i < 0 ? alarms.add(fixed) : alarms[i] = fixed;
@@ -80,7 +90,10 @@ class AlarmRepo extends ChangeNotifier {
   }
 
   Future<void> _commit() async {
-    await _p.setString('alarms', jsonEncode(alarms.map((a) => a.toJson()).toList()));
+    await _p.setString(
+      'alarms',
+      jsonEncode(alarms.map((a) => a.toJson()).toList()),
+    );
     notifyListeners();
     await sync();
   }
@@ -89,7 +102,10 @@ class AlarmRepo extends ChangeNotifier {
   Future<void> sync() async {
     final ts = DateTime.now().millisecondsSinceEpoch;
     try {
-      await _ch.invokeMethod('send', {'json': jsonEncode(alarms.map((a) => a.toJson()).toList()), 'ts': ts});
+      await _ch.invokeMethod('send', {
+        'json': jsonEncode(alarms.map((a) => a.toJson()).toList()),
+        'ts': ts,
+      });
       await _p.setInt('lastSentTs', ts);
       sendError = null;
     } on PlatformException catch (e) {
@@ -101,11 +117,42 @@ class AlarmRepo extends ChangeNotifier {
     await refreshStatus();
   }
 
+  /// Botão de um problema da checagem: reenvia a lista, abre o Bluetooth do celular ou abre a tela no relógio.
+  Future<void> fix(Fix f) async {
+    if (f == Fix.resend) return resync();
+    try {
+      await _ch.invokeMethod(
+        f == Fix.bluetooth ? 'openBluetooth' : 'openOnWatch',
+        {'kind': f.name},
+      );
+      sendError = null;
+    } on PlatformException catch (e) {
+      sendError = e.message ?? 'Não foi possível abrir';
+    } on MissingPluginException {
+      sendError = 'Sem Data Layer neste aparelho';
+    }
+    notifyListeners();
+  }
+
+  /// Reenvia e espera o relógio confirmar (até ~8 s). O ack chega depois do envio, então sem esperar a
+  /// checagem ainda mostraria "sem confirmação". Só para ações do usuário: salvar um alarme não deve esperar.
+  Future<void> resync() async {
+    await sync();
+    for (var i = 0; i < 8 && sendError == null && !synced; i++) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      await refreshStatus();
+    }
+  }
+
   Future<void> refreshStatus() async {
     try {
-      final r = Map<String, dynamic>.from(await _ch.invokeMethod('status') as Map);
+      final r = Map<String, dynamic>.from(
+        await _ch.invokeMethod('status') as Map,
+      );
       nodes = List<String>.from(r['nodes'] as List);
-      ack = r['ack'] == null ? null : Map<String, dynamic>.from(r['ack'] as Map);
+      ack = r['ack'] == null
+          ? null
+          : Map<String, dynamic>.from(r['ack'] as Map);
     } on PlatformException {
       nodes = [];
       ack = null;
@@ -127,7 +174,21 @@ class AlarmRepo extends ChangeNotifier {
   }
 
   /// Hora em que o relógio mandou o estado (bateria e permissões são desse momento).
-  DateTime? get ackAt => ack?['ts'] == null ? null : DateTime.fromMillisecondsSinceEpoch(ack!['ts'] as int);
+  DateTime? get ackAt => ack?['ts'] == null
+      ? null
+      : DateTime.fromMillisecondsSinceEpoch(ack!['ts'] as int);
 
-  List<Check> get checks => nightChecks(connected: connected, synced: synced, ack: ack);
+  List<Check> get checks => nightChecks(
+    connected: connected,
+    synced: synced,
+    ack: ack,
+    suspendedOk: suspendedOk,
+  );
+
+  bool get suspendedOk => _p.getBool('suspendedOk') ?? false;
+
+  Future<void> confirmSuspended() async {
+    await _p.setBool('suspendedOk', true);
+    notifyListeners();
+  }
 }

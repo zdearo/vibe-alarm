@@ -42,7 +42,7 @@ class DataLayerService : WearableListenerService() {
             dataMap.putInt("count", count)
             dataMap.putInt("level", level)
             dataMap.putBoolean("activity", granted(Manifest.permission.ACTIVITY_RECOGNITION))
-            dataMap.putBoolean("battery", power.isIgnoringBatteryOptimizations(packageName))
+            dataMap.putBoolean("powersave", power.isPowerSaveMode) // economia de energia ligada limita o app em segundo plano
             dataMap.putBoolean("overlay", Settings.canDrawOverlays(this@DataLayerService)) // sem isso a tela "Despertando" não abre
             dataMap.putBoolean("notifications", getSystemService(NotificationManager::class.java).areNotificationsEnabled())
             dataMap.putBoolean("scan", granted(Manifest.permission.BLUETOOTH_SCAN)) // só a trava pelo celular depende disso
