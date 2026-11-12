@@ -119,7 +119,7 @@ class AlarmRepo extends ChangeNotifier {
 
   /// Botão de um problema da checagem: reenvia a lista, abre o Bluetooth do celular ou abre a tela no relógio.
   Future<void> fix(Fix f) async {
-    if (f == Fix.resend) return sync();
+    if (f == Fix.resend) return resync();
     try {
       await _ch.invokeMethod(
         f == Fix.bluetooth ? 'openBluetooth' : 'openOnWatch',
@@ -132,6 +132,16 @@ class AlarmRepo extends ChangeNotifier {
       sendError = 'Sem Data Layer neste aparelho';
     }
     notifyListeners();
+  }
+
+  /// Reenvia e espera o relógio confirmar (até ~8 s). O ack chega depois do envio, então sem esperar a
+  /// checagem ainda mostraria "sem confirmação". Só para ações do usuário: salvar um alarme não deve esperar.
+  Future<void> resync() async {
+    await sync();
+    for (var i = 0; i < 8 && sendError == null && !synced; i++) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      await refreshStatus();
+    }
   }
 
   Future<void> refreshStatus() async {

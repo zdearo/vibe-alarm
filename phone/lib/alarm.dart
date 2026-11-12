@@ -81,8 +81,9 @@ class Alarm {
   /// Instante absoluto de um alarme de uma vez: hoje se ainda não passou, senão amanhã.
   static int onceAt(int hour, int minute, DateTime now) {
     var t = DateTime(now.year, now.month, now.day, hour, minute);
-    if (!t.isAfter(now))
+    if (!t.isAfter(now)) {
       t = DateTime(now.year, now.month, now.day + 1, hour, minute);
+    }
     return t.millisecondsSinceEpoch;
   }
 

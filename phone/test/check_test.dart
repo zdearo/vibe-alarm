@@ -21,7 +21,7 @@ void main() {
       },
     );
     expect(levels(c).every((l) => l == Level.ok), isTrue);
-    expect(c.length, 8);
+    expect(c.length, 9);
   });
 
   test('desconectado e sem confirmação falham', () {
@@ -31,7 +31,7 @@ void main() {
       synced: false,
       ack: null,
     );
-    expect(levels(c), [Level.fail, Level.fail]);
+    expect(levels(c).where((l) => l != Level.ok), [Level.fail, Level.fail]);
   });
 
   test('ack de relógio antigo não acusa campos que não mandou', () {
@@ -78,7 +78,7 @@ void fixTests() {
       synced: false,
       ack: null,
     );
-    expect(c.map((x) => x.action), [Fix.bluetooth, Fix.resend]);
+    expect(c.where((x) => x.level != Level.ok).map((x) => x.action), [Fix.bluetooth, Fix.resend]);
     final w = nightChecks(
       suspendedOk: true,
       connected: true,

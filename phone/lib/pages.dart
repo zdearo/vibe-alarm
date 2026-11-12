@@ -319,7 +319,10 @@ class _NightPageState extends State<NightPage> {
     return _asked.contains(f) ? 'Aberto no relógio' : f.label;
   }
 
-  Widget _issue(Check c) => Padding(
+  // A Column do Group centraliza filhos estreitos: a largura cheia mantém todas as linhas coladas à esquerda.
+  Widget _issue(Check c) => SizedBox(
+    width: double.infinity,
+    child: Padding(
     padding: const EdgeInsets.all(s3),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,7 +385,7 @@ class _NightPageState extends State<NightPage> {
         ],
       ],
     ),
-  );
+  ));
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -432,7 +435,7 @@ class _NightPageState extends State<NightPage> {
         bottomNavigationBar: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(s4, s2, s4, s3),
-            child: PrimaryButton('Verificar de novo', repo.sync),
+            child: PrimaryButton('Verificar de novo', repo.resync),
           ),
         ),
       );
