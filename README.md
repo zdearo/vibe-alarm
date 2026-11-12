@@ -43,14 +43,14 @@ docs/    notas de setup, sensores e ideias
 | Horário e dias | dias da semana, ou uma vez só |
 | Rótulo | texto livre |
 | Intensidade | suave, normal, intenso |
-| Rampa | segundos até a vibração máxima (padrão 40) |
+| Subida | tempo até a vibração máxima: 15 s, 30 s, 40 s (padrão), 1 min, 1 min 30 s ou 2 min |
 | Caminhada | 10, 20 ou 30 s para encerrar |
 | Limite de segurança | 5, 10 ou 15 min |
 
 ## Requisitos
 
 - Flutter (Dart SDK ^3.13) e Android SDK
-- Celular Android pareado com um relógio Wear OS (minSdk 30, Wear OS 3+)
+- Celular Android pareado com um relógio Wear OS (relógio com `minSdk = 30`)
 - `adb` com os dois aparelhos conectados (USB ou Wi-Fi)
 
 ## Build e instalação
