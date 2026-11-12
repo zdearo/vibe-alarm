@@ -14,6 +14,8 @@ Pensado e calibrado num Galaxy Watch.
 
 **Trava pela conexão com o celular (experimental):** no início do alarme, o relógio pede ao celular que anuncie um farol Bluetooth LE. Se houver sinal, o alarme só libera quando o RSSI variar ≥ 12 dB em relação ao ponto inicial por 3 janelas seguidas, ou seja, quando você se afastou do celular (que fica num ponto fixo, como o criado-mudo). Sem sinal, a trava não vale.
 
+**Checagem de boa-noite:** a tela inicial do celular mostra "Tudo pronto" ou o que pode fazer o alarme falhar (relógio desconectado, lista sem confirmação, bateria abaixo de 30%, permissões negadas no relógio). O estado vem do relógio a cada sincronização; "Verificar de novo" reenvia a lista para atualizar.
+
 Detalhes, medições e calibração: [`docs/sensores.md`](docs/sensores.md).
 
 ## Estrutura
@@ -22,6 +24,7 @@ Detalhes, medições e calibração: [`docs/sensores.md`](docs/sensores.md).
 phone/   App Flutter (Android): lista e edição de alarmes, sincronização com o relógio
   lib/alarm.dart              modelo do alarme
   lib/repo.dart               persistência (shared_preferences) e envio ao relógio
+  lib/check.dart              checagem de boa-noite (permissões, bateria, sincronização)
   lib/pages.dart, theme.dart  telas e tema
   android/.../MainActivity.kt ponte Flutter ↔ Data Layer (MethodChannel vibealarm/sync)
   android/.../BeaconService.kt farol Bluetooth LE acionado pelo relógio
@@ -32,7 +35,6 @@ watch/   App Wear OS nativo (Kotlin)
   MotionDetector                                detecção de caminhada (acelerômetro + giroscópio)
   ConnectionGate, Beacon                        trava pelo RSSI do celular
   DataLayerService                              recebe os alarmes do celular
-  SleepStateService, HealthDiagActivity         experimentos com Health Services
 docs/    notas de setup, sensores e ideias
 ```
 
@@ -109,4 +111,4 @@ Consultar o relógio por `adb` o mantém acordado e esconde atrasos de disparo e
 - Calibração feita com uma pessoa e um Galaxy Watch; rolar na cama ainda não foi medido. Se o alarme parar sem você levantar, suba `MotionDetector.THRESHOLD`.
 - O sensor de passos da Samsung não é usado: não emite eventos com o motor vibrando.
 - A trava pelo celular saiu de poucas rodadas de medição e ainda precisa ser revalidada com o celular no criado-mudo.
-- Barômetro, magnetômetro e Health Services ainda só registram no log, sem influenciar o alarme.
+- Roteiro para medir rolar na cama e a trava com o celular no criado-mudo: [`docs/medicao.md`](docs/medicao.md).
