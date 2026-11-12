@@ -50,4 +50,5 @@ flutter {
 
 dependencies {
     implementation("com.google.android.gms:play-services-wearable:19.0.0")
+    implementation("androidx.wear:wear-remote-interactions:1.1.0")
 }
