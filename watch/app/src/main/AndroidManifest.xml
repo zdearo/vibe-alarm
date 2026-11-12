@@ -45,13 +45,6 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
-        <!-- Diagnóstico temporário, aberto só por adb. Remover depois. -->
-        <activity android:name=".HealthDiagActivity" android:exported="true" />
-        <service
-            android:name=".SleepStateService"
-            android:exported="true"
-            android:permission="com.google.android.wearable.healthservices.permission.PASSIVE_DATA_BINDING" />
-
         <receiver android:name=".AlarmReceiver" android:exported="false" />
 
         <receiver android:name=".BootReceiver" android:exported="true">

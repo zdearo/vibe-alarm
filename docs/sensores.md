@@ -22,9 +22,9 @@ Só a caminhada encerra o alarme (além do limite de segurança de 5, 10 ou 15 m
 - Parado, nas pausas: média 0,03 a 0,39 m/s² (mexidas isoladas); giro < 0,1 rad/s.
 - Andando: média 0,25 a 2,6 (braço mais parado dá o valor baixo); giro 0,3 a 1,2 rad/s no regime estável.
 - Girando o braço em círculos: média 1,3 a 3,1; giro 1,4 a 3,4 rad/s (quase todas as janelas > 2).
-- Não separam: razão horizontal/vertical da aceleração (andar e girar se sobrepõem) e o **barômetro** (LPS28DFW): a altura do pulso oscilou ±0,25 m só com o braço, perto demais do degrau esperado de levantar (~0,4 m). O barômetro fica registrado no log (`alt=`), sem influenciar o alarme.
+- Não separam: razão horizontal/vertical da aceleração (andar e girar se sobrepõem) e o **barômetro** (LPS28DFW): a altura do pulso oscilou ±0,25 m só com o braço, perto demais do degrau esperado de levantar (~0,4 m). Leitura do barômetro removida do código em 12/11/2026.
 - **GPS descartado** (medido em 12/11/2026, dentro de casa): 1º ponto de rede em 1 s com erro de 12–19 m; 1º ponto de GPS só em 14 s, erro de 34 m, depois 9–10 m. Com a pessoa quase parada o "deslocamento" oscilou 4–12 m (ruído), e andando ficou em 5–8 m, com velocidade de 0,2–0,5 m/s. Além disso o Android bloqueia localização em serviço iniciado em segundo plano (`Foreground service started from background can not have location/camera/microphone access`).
-- **Magnetômetro (só a intensidade do campo, que não muda com a rotação do relógio):** parado/mexendo pouco ficou estável (39–40 µT); girando rápido (2,7 rad/s) variou 1–2 µT; andando variou 8–18 µT entre janelas. Promissor como indicador de deslocamento, mas a amostra tem ~10 s de caminhada e havia um ímã por perto (1320 µT nos primeiros 25 s). Registrado no log (`mag=`), ainda sem influenciar o alarme.
+- **Magnetômetro (só a intensidade do campo, que não muda com a rotação do relógio):** parado/mexendo pouco ficou estável (39–40 µT); girando rápido (2,7 rad/s) variou 1–2 µT; andando variou 8–18 µT entre janelas. Promissor como indicador de deslocamento, mas a amostra tem ~10 s de caminhada e havia um ímã por perto (1320 µT nos primeiros 25 s). Leitura removida do código em 12/11/2026 (ver "Magnetômetro não separa" abaixo).
 - Ainda não foi medido o movimento de rolar na cama de verdade. Se o alarme parar sem a pessoa levantar, subir o limiar (`MotionDetector.THRESHOLD`) ou apertar o peso do giro.
 - Quem anda muito rápido (giro alto) conta mais devagar, mas conta: o peso só zera acima de 2,6 rad/s.
 
@@ -34,8 +34,8 @@ Só a caminhada encerra o alarme (além do limite de segurança de 5, 10 ou 15 m
 - Verificado em sono profundo de verdade (suspend/resume a cada ~1 s até o disparo): serviço às 01:34:34.057 e vibração às 01:34:34.172 para um alarme das 01:34:34, **0,17 s de atraso**, e o aparelho não voltou a dormir durante o alarme.
 - Cuidado ao testar: consultar o relógio por `adb` o mantém acordado e **esconde** esse defeito. Para testar disparo, agendar, não tocar no relógio e só reconectar depois.
 
-## Experimentos que ainda registram no log (sem influenciar o alarme)
-- Barômetro (`alt=`), magnetômetro (`mag=`, `d=`) e RSSI do farol Bluetooth LE do celular (`rssi=`, `rd=`). O celular anuncia o farol enquanto o app está aberto (`phone/.../MainActivity.kt`, `BLUETOOTH_ADVERTISE`) e o relógio escuta (`BLUETOOTH_SCAN`, `Beacon.kt`). Remover se não forem usados.
+## RSSI do farol no log
+- RSSI do farol Bluetooth LE do celular (`rssi=`, `rd=`), usado pela trava. O celular anuncia o farol enquanto o app está aberto (`phone/.../MainActivity.kt`, `BLUETOOTH_ADVERTISE`) e o relógio escuta (`BLUETOOTH_SCAN`, `Beacon.kt`).
 - Rodada de 01:28 (celular parado num ponto): RSSI −62 dBm em repouso; ao andar e se afastar caiu até −92 (Δ −27 dB) e voltou a −75 ao retornar; o campo magnético variou −8 a −20 µT. O RSSI tem ruído de ±5 dB por janela. Ainda falta a fase "braço mexendo no mesmo lugar" para saber se ambos ficam quietos.
 
 ## Farol Bluetooth do celular acionado pelo relógio (12/11/2026)

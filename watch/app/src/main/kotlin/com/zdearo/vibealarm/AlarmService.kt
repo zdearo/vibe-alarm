@@ -55,13 +55,6 @@ class AlarmService : Service(), SensorEventListener {
     private var startedAt = 0L
     private var goal = 0
     private var motion = MotionDetector()
-    private var hpa = 0f
-    private var baseHpa = 0f
-    private var baseCount = 0
-    private var magSum = 0f
-    private var magSumSq = 0f
-    private var magN = 0
-    private var baseMag = 0f
     private var rssiSum = 0f
     private var rssiSumSq = 0f
     private var rssiN = 0
@@ -118,13 +111,7 @@ class AlarmService : Service(), SensorEventListener {
             sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
                 ?.let { sensors.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
                 ?: Log.w(TAG, "Sem acelerômetro: só o limite de segurança encerra")
-            // EXPERIMENTAL: só registra no log a variação de altura do pulso (barômetro), para avaliar se ajuda a
-            // separar "levantou" de "mexeu o braço". Não influencia o alarme.
-            sensors.getDefaultSensor(Sensor.TYPE_PRESSURE)
-                ?.let { sensors.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
             sensors.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-                ?.let { sensors.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-            sensors.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
                 ?.let { sensors.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
             notifyPhone("/beacon/start")
             startPhoneScan()
@@ -132,11 +119,6 @@ class AlarmService : Service(), SensorEventListener {
                 var f: MotionDetector.Features? = null
                 m.onFeatures = { f = it }
                 m.onWindow = { mean, seconds ->
-                    // EXPERIMENTAL: intensidade do campo magnético na janela. Girar o relógio não a muda; deslocar-se perto
-                    // de ferragens e eletrônicos muda. d = variação desde a 1ª janela.
-                    val mag = if (magN > 0) magSum / magN else 0f
-                    val magStd = if (magN > 0) kotlin.math.sqrt(maxOf(0f, magSumSq / magN - mag * mag)) else 0f
-                    if (baseMag == 0f) baseMag = mag
                     // EXPERIMENTAL: RSSI do farol do celular. O ponto X é o sinal nas 3 primeiras janelas do alarme (pessoa
                     // ainda deitada); d é a variação em relação a X. Pouca variação sugere braço mexendo no mesmo lugar.
                     val rssi = if (rssiN > 0) rssiSum / rssiN else Float.NaN
@@ -145,12 +127,11 @@ class AlarmService : Service(), SensorEventListener {
                     val baseRssi = gate.baseline
                     Log.d(
                         TAG,
-                        "janela média=%.2f caminhando=%d s alt=%+.2f m v=%.2f h=%.2f gyro=%.2f mag=%.1f std=%.2f d=%+.1f uT rssi=%.0f rstd=%.1f rd=%+.1f dB n=%d trava=%s".format(
-                            mean, seconds, (baseHpa - hpa) * M_PER_HPA, f?.vertical ?: 0f, f?.horizontal ?: 0f, f?.gyro ?: 0f,
-                            mag, magStd, mag - baseMag, rssi, rssiStd, rssi - baseRssi, rssiN, gate.state,
+                        "janela média=%.2f caminhando=%d s v=%.2f h=%.2f gyro=%.2f rssi=%.0f rstd=%.1f rd=%+.1f dB n=%d trava=%s".format(
+                            mean, seconds, f?.vertical ?: 0f, f?.horizontal ?: 0f, f?.gyro ?: 0f,
+                            rssi, rssiStd, rssi - baseRssi, rssiN, gate.state,
                         ),
                     )
-                    magSum = 0f; magSumSq = 0f; magN = 0
                     rssiSum = 0f; rssiSumSq = 0f; rssiN = 0
                 }
             }
@@ -174,21 +155,6 @@ class AlarmService : Service(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type == Sensor.TYPE_PRESSURE) {
-            hpa = if (hpa == 0f) event.values[0] else hpa + 0.2f * (event.values[0] - hpa) // filtro: tira o ruído
-            if (baseCount < 15) { // a "altura zero" é a do início do alarme, com a pessoa ainda deitada
-                baseHpa = hpa
-                baseCount++
-            }
-            return
-        }
-        if (event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
-            if (isQuiet(event.timestamp)) { // o motor também perturba o campo magnético
-                val b = kotlin.math.sqrt(event.values[0] * event.values[0] + event.values[1] * event.values[1] + event.values[2] * event.values[2])
-                magSum += b; magSumSq += b * b; magN++
-            }
-            return
-        }
         if (event.sensor.type == Sensor.TYPE_GYROSCOPE) {
             motion.onGyro(event.values[0], event.values[1], event.values[2], isQuiet(event.timestamp))
             return
@@ -287,10 +253,6 @@ class AlarmService : Service(), SensorEventListener {
         screenOff = null
         wakeLock?.takeIf { it.isHeld }?.release()
         motion = MotionDetector()
-        hpa = 0f
-        baseHpa = 0f
-        baseCount = 0
-        magSum = 0f; magSumSq = 0f; magN = 0; baseMag = 0f
         runCatching { scanner?.stopScan(scanCallback) }
         scanner = null
         rssiSum = 0f; rssiSumSq = 0f; rssiN = 0
@@ -344,7 +306,6 @@ class AlarmService : Service(), SensorEventListener {
         private const val NOTIFICATION_ID = 1
         private const val TEST_MS = 15_000L
         private const val RESUME_DELAY_MS = 500L
-        private const val M_PER_HPA = 8.43f // metros de altura por hPa perto do nível do mar
 
         // Teste de vibração da tela do relógio: rampa curta, sem meta de caminhada, termina em 15 s.
         private val TEST_ALARM = Alarm("test", 0, 0, emptySet(), "Teste", true, 1, 10, 0, 1, 0)
