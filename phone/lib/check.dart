@@ -28,7 +28,7 @@ class Check {
 /// [ack] é a última confirmação do relógio (null se nunca chegou). Campos ausentes no ack (relógio com versão
 /// antiga) não viram falha: ficam de fora.
 ///
-/// [suspendedOk]: o usuário confirmou que tirou o Pulso de "Aplicativos suspensos" (lista da Samsung no relógio).
+/// [suspendedOk]: o usuário confirmou que tirou o Vibe Alarm de "Aplicativos suspensos" (lista da Samsung no relógio).
 /// Nenhuma API expõe essa lista, então a confirmação é manual.
 List<Check> nightChecks({
   required bool connected,
@@ -119,7 +119,7 @@ List<Check> nightChecks({
         'Notificações',
         'desligadas',
         Level.warn,
-        'Com a tela do alarme fechada, nada indica o alarme. No relógio, ligue as notificações do Pulso.',
+        'Com a tela do alarme fechada, nada indica o alarme. No relógio, ligue as notificações do Vibe Alarm.',
         Fix.notifications,
       )
     else if (flag('notifications') == true)

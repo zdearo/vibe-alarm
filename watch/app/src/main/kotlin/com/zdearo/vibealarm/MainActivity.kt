@@ -50,7 +50,7 @@ class MainActivity : Activity() {
         k = Ui.scale(this)
         screenW = resources.displayMetrics.widthPixels
         screenH = resources.displayMetrics.heightPixels
-        if (intent.data?.scheme == "pulso") openFix(intent.data?.lastPathSegment) else requestPermissions(
+        if (intent.data?.scheme == "vibealarm") openFix(intent.data?.lastPathSegment) else requestPermissions(
             buildList {
                 add(Manifest.permission.ACTIVITY_RECOGNITION)
                 if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)

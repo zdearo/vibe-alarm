@@ -9,7 +9,7 @@ Future<void> main() async {
   final repo = await AlarmRepo.load();
   runApp(
     MaterialApp(
-      title: 'Pulso',
+      title: 'Vibe Alarm',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       home: Shell(repo),

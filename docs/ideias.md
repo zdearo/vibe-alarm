@@ -1,4 +1,4 @@
-# Pulso — ideias escolhidas
+# Vibe Alarm — ideias escolhidas
 
 ## Identidade (testar cada uma separada antes de definir)
 1. **Assinatura tátil:** a rampa de vibração como "logo sonoro" da marca. Cada interação dá um tique no celular, e o onboarding começa com "sinta o seu despertar".

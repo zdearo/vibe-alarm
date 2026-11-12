@@ -5,7 +5,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 
 /**
- * Tokens e fontes do Pulso no relógio. O mockup é um quadro de 400 px; na tela real (Galaxy Watch: 203 dp de
+ * Tokens e fontes do Vibe Alarm no relógio. O mockup é um quadro de 400 px; na tela real (Galaxy Watch: 203 dp de
  * largura) as medidas dele ficariam minúsculas, então aqui tudo é em dp, no padrão do Wear OS:
  * horário 48, texto 13–16, alvo de toque 40–44. Larguras são frações da tela para caber no círculo.
  */

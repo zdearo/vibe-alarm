@@ -1,4 +1,4 @@
-/// Alarme do Pulso. `days` usa DateTime.weekday (1 = segunda ... 7 = domingo); vazio = toca uma vez, em [at].
+/// Alarme do Vibe Alarm. `days` usa DateTime.weekday (1 = segunda ... 7 = domingo); vazio = toca uma vez, em [at].
 class Alarm {
   const Alarm({
     required this.id,

@@ -40,13 +40,13 @@ class MainActivity : FlutterActivity() {
             .addOnFailureListener { result.error("SEND", it.message, null) }
     }
 
-    /** Abre no relógio o MainActivity do Pulso com pulso://fix/<tipo>; ele leva à tela de ajuste certa. */
+    /** Abre no relógio o MainActivity do Vibe Alarm com vibealarm://fix/<tipo>; ele leva à tela de ajuste certa. */
     private fun openOnWatch(kind: String, result: MethodChannel.Result) {
         Wearable.getNodeClient(this).connectedNodes
             .addOnFailureListener { result.error("OPEN", it.message, null) }
             .addOnSuccessListener { nodes ->
                 val node = nodes.firstOrNull() ?: return@addOnSuccessListener result.error("OPEN", "Relógio não encontrado", null)
-                val intent = Intent(Intent.ACTION_VIEW).addCategory(Intent.CATEGORY_BROWSABLE).setData(Uri.parse("pulso://fix/$kind"))
+                val intent = Intent(Intent.ACTION_VIEW).addCategory(Intent.CATEGORY_BROWSABLE).setData(Uri.parse("vibealarm://fix/$kind"))
                 val done = RemoteActivityHelper(this, ContextCompat.getMainExecutor(this)).startRemoteActivity(intent, node.id)
                 done.addListener({
                     try {
