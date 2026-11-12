@@ -35,7 +35,7 @@ watch/   App Wear OS nativo (Kotlin)
   MotionDetector                                detecção de caminhada (acelerômetro + giroscópio)
   ConnectionGate, Beacon                        trava pelo RSSI do celular
   DataLayerService                              recebe os alarmes do celular
-docs/    notas de setup, sensores e ideias
+docs/    notas de setup, sensores, ideias e logo (docs/logo.md, SVGs em docs/logo/)
 ```
 
 ## Opções de cada alarme

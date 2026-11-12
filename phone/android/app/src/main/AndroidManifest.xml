@@ -2,7 +2,7 @@
     <!-- EXPERIMENTAL: o celular anuncia um sinal Bluetooth LE para o relógio medir a distância (RSSI). Remover se não for usado. -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <application
-        android:label="vibealarm"
+        android:label="Vibe Alarm"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="#E4E4E4" stroke-linecap="round" stroke-linejoin="round">
+  <title>Vibe Alarm</title>
+  <circle cx="60" cy="60" r="30" stroke-width="8"/>
+  <path d="M49 47 L60 68 L73 43" stroke-width="8"/>
+  <path d="M96.04 34.76 A44 44 0 0 1 96.04 85.24 M23.96 34.76 A44 44 0 0 0 23.96 85.24 M112.62 40.85 A56 56 0 0 1 112.62 79.15 M7.38 40.85 A56 56 0 0 0 7.38 79.15" stroke-width="6"/>
+</svg>

@@ -44,6 +44,7 @@ object Beacon {
     private const val MAX_MS = 180_000 // o Android limita o anúncio a 180 s; depois disso para sozinho
 
     private var advertiser: BluetoothLeAdvertiser? = null
+    private var startedAt = 0L
     private val callback = object : AdvertiseCallback() {
         override fun onStartSuccess(settings: AdvertiseSettings) {
             Log.d(TAG, "anunciando")
@@ -56,12 +57,14 @@ object Beacon {
     }
 
     fun start(context: Context) {
-        if (advertiser != null) return
+        // Depois dos 180 s o anúncio para sozinho, mas `advertiser` continua preenchido: sem checar o tempo, o próximo start era ignorado.
+        if (advertiser != null && SystemClock.elapsedRealtime() - startedAt < MAX_MS) return
         if (context.checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED) {
             Log.w(TAG, "sem permissão BLUETOOTH_ADVERTISE")
             return
         }
         advertiser = context.getSystemService(BluetoothManager::class.java).adapter?.bluetoothLeAdvertiser ?: return
+        startedAt = SystemClock.elapsedRealtime()
         advertiser?.startAdvertising(
             AdvertiseSettings.Builder()
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
