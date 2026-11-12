@@ -24,6 +24,18 @@ void main() {
     expect(c.length, 9);
   });
 
+  test('relógio carregando falha: fora do pulso o alarme não toca', () {
+    final c = nightChecks(
+      suspendedOk: true,
+      connected: true,
+      synced: true,
+      ack: {'level': 82, 'charging': true},
+    );
+    expect(c.where((x) => x.level == Level.fail).map((x) => x.value), [
+      'carregando',
+    ]);
+  });
+
   test('desconectado e sem confirmação falham', () {
     final c = nightChecks(
       suspendedOk: true,
@@ -78,7 +90,10 @@ void fixTests() {
       synced: false,
       ack: null,
     );
-    expect(c.where((x) => x.level != Level.ok).map((x) => x.action), [Fix.bluetooth, Fix.resend]);
+    expect(c.where((x) => x.level != Level.ok).map((x) => x.action), [
+      Fix.bluetooth,
+      Fix.resend,
+    ]);
     final w = nightChecks(
       suspendedOk: true,
       connected: true,

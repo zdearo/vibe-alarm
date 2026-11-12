@@ -66,6 +66,13 @@ List<Check> nightChecks({
               'Carregue antes de dormir.',
             )
           : Check('Bateria do relógio', '$level%', Level.ok),
+    if (flag('charging') == true)
+      const Check(
+        'Relógio',
+        'carregando',
+        Level.fail,
+        'Fora do pulso o alarme não toca. Vista o relógio antes de dormir.',
+      ),
     if (flag('activity') == false)
       const Check(
         'Atividade física',

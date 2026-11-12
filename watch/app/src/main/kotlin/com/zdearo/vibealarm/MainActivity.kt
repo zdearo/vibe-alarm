@@ -19,7 +19,6 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -128,31 +127,27 @@ class MainActivity : Activity() {
         }
     }
 
-    // Página 2 do mockup: só "Testar vibração" faz algo; as outras linhas mostram o estado.
+    // Página 2 do mockup: só linhas de estado, sem ação.
     private fun settingsPage(): View {
         syncValue = label(13f, Ui.MUTED, Ui.body(this, 400))
         permValue = label(13f, Ui.MUTED, Ui.body(this, 400))
         return column().apply {
-            addView(row("Testar vibração", null, Ui.ACCENT) {
-                ContextCompat.startForegroundService(this@MainActivity, Intent(this@MainActivity, AlarmService::class.java).putExtra(AlarmService.EXTRA_TEST, true))
-            })
-            addView(row("Sincronizado", syncValue, Ui.SURFACE, null))
-            addView(row("Permissões", permValue, Ui.SURFACE, null))
+            addView(row("Sincronizado", syncValue))
+            addView(row("Permissões", permValue))
         }
     }
 
-    private fun row(name: String, value: TextView?, bg: Int, onClick: (() -> Unit)?) = LinearLayout(this).apply {
+    private fun row(name: String, value: TextView) = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         setPadding(px(12f), 0, px(12f), 0)
-        background = pill(bg)
+        background = pill(Ui.SURFACE)
         val nameView = label(13f, Ui.TEXT, Ui.body(this@MainActivity, 600)).apply {
             text = name
-            gravity = if (value == null) Gravity.CENTER else Gravity.START or Gravity.CENTER_VERTICAL
+            gravity = Gravity.START or Gravity.CENTER_VERTICAL
         }
         addView(nameView, LinearLayout.LayoutParams(0, -2, 1f))
-        if (value != null) addView(value)
-        if (onClick != null) setOnClickListener { onClick() }
+        addView(value)
         layoutParams = LinearLayout.LayoutParams((screenW * 0.74f).toInt(), px(40f)).apply { topMargin = px(6f) }
     }
 
@@ -171,7 +166,7 @@ class MainActivity : Activity() {
         }
         val synced = AlarmStore.syncedAt(this)
         syncValue.text = when {
-            synced == 0L -> "aguardando"
+            synced == 0L -> "–"
             isToday(synced) -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(synced))
             else -> SimpleDateFormat("dd/MM", Locale.getDefault()).format(Date(synced))
         }

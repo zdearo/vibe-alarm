@@ -143,7 +143,7 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    widget.repo.refreshStatus();
+    widget.repo.resync(); // reenviar faz o relógio responder com o estado de agora (carregando, bateria)
   }
 
   @override
@@ -154,7 +154,7 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) widget.repo.refreshStatus();
+    if (state == AppLifecycleState.resumed) widget.repo.resync();
   }
 
   @override
@@ -323,69 +323,73 @@ class _NightPageState extends State<NightPage> {
   Widget _issue(Check c) => SizedBox(
     width: double.infinity,
     child: Padding(
-    padding: const EdgeInsets.all(s3),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('${c.name}: ${c.value}', style: body(16, bold: true)),
-        if (c.fix != null) ...[
-          const SizedBox(height: s1),
-          Text(c.fix!, style: body(14, color: muted)),
-        ],
-        if (c.action != null) ...[
-          const SizedBox(height: s3),
-          Wrap(
-            spacing: s2,
-            runSpacing: s2,
-            children: [
-              FilledButton(
-                onPressed: _busy == null ? () => _run(c.action!) : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: ink,
-                  foregroundColor: text,
-                  disabledBackgroundColor: ink,
-                  disabledForegroundColor: muted,
-                  minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: s3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(s2),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _label(c.action!),
-                      style: body(
-                        14,
-                        bold: true,
-                        color: _busy == c.action ? muted : text,
-                      ),
-                    ),
-                    if (c.action != Fix.resend) ...[
-                      const SizedBox(width: s2),
-                      const Icon(Icons.north_east, size: 16),
-                    ],
-                  ],
-                ),
-              ),
-              // A lista de suspensos não pode ser lida: quem tirou o app dela confirma aqui.
-              if (c.action == Fix.suspended)
-                TextButton(
-                  onPressed: widget.repo.confirmSuspended,
-                  style: TextButton.styleFrom(
+      padding: const EdgeInsets.all(s3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${c.name}: ${c.value}', style: body(16, bold: true)),
+          if (c.fix != null) ...[
+            const SizedBox(height: s1),
+            Text(c.fix!, style: body(14, color: muted)),
+          ],
+          if (c.action != null) ...[
+            const SizedBox(height: s3),
+            Wrap(
+              spacing: s2,
+              runSpacing: s2,
+              children: [
+                FilledButton(
+                  onPressed: _busy == null ? () => _run(c.action!) : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ink,
                     foregroundColor: text,
+                    disabledBackgroundColor: ink,
+                    disabledForegroundColor: muted,
                     minimumSize: const Size(0, 44),
                     padding: const EdgeInsets.symmetric(horizontal: s3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(s2),
+                    ),
                   ),
-                  child: Text('Já tirei da lista', style: body(14, bold: true)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _label(c.action!),
+                        style: body(
+                          14,
+                          bold: true,
+                          color: _busy == c.action ? muted : text,
+                        ),
+                      ),
+                      if (c.action != Fix.resend) ...[
+                        const SizedBox(width: s2),
+                        const Icon(Icons.north_east, size: 16),
+                      ],
+                    ],
+                  ),
                 ),
-            ],
-          ),
+                // A lista de suspensos não pode ser lida: quem tirou o app dela confirma aqui.
+                if (c.action == Fix.suspended)
+                  TextButton(
+                    onPressed: widget.repo.confirmSuspended,
+                    style: TextButton.styleFrom(
+                      foregroundColor: text,
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: s3),
+                    ),
+                    child: Text(
+                      'Já tirei da lista',
+                      style: body(14, bold: true),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ],
-      ],
+      ),
     ),
-  ));
+  );
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(

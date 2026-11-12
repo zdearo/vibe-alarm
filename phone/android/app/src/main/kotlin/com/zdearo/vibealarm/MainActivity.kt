@@ -80,6 +80,7 @@ class MainActivity : FlutterActivity() {
                                 "overlay" to if (m.containsKey("overlay")) m.getBoolean("overlay") else null,
                                 "notifications" to if (m.containsKey("notifications")) m.getBoolean("notifications") else null,
                                 "scan" to if (m.containsKey("scan")) m.getBoolean("scan") else null,
+                                "charging" to if (m.containsKey("charging")) m.getBoolean("charging") else null,
                             )
                         }
                         buffer.release()

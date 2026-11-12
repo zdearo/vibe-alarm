@@ -35,12 +35,14 @@ class DataLayerService : WearableListenerService() {
 
     private fun sendAck(sentTs: Long, count: Int) {
         val power = getSystemService(PowerManager::class.java)
-        val level = getSystemService(BatteryManager::class.java).getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val battery = getSystemService(BatteryManager::class.java)
+        val level = battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val req = PutDataMapRequest.create("/ack").apply {
             dataMap.putLong("sentTs", sentTs) // eco do carimbo do celular: ele compara com o que enviou
             dataMap.putLong("ts", System.currentTimeMillis())
             dataMap.putInt("count", count)
             dataMap.putInt("level", level)
+            dataMap.putBoolean("charging", battery.isCharging) // carregando = fora do pulso: o alarme não toca
             dataMap.putBoolean("activity", granted(Manifest.permission.ACTIVITY_RECOGNITION))
             dataMap.putBoolean("powersave", power.isPowerSaveMode) // economia de energia ligada limita o app em segundo plano
             dataMap.putBoolean("overlay", Settings.canDrawOverlays(this@DataLayerService)) // sem isso a tela "Despertando" não abre
