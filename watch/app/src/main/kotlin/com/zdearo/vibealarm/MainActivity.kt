@@ -159,13 +159,19 @@ class MainActivity : Activity() {
             isToday(synced) -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(synced))
             else -> SimpleDateFormat("dd/MM", Locale.getDefault()).format(Date(synced))
         }
-        val pending = listOf(
-            checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED,
-            !Settings.canDrawOverlays(this), // sem isso a tela "Despertando" não abre no disparo
-        ).count { it }
-        permValue.text = if (pending == 0) "ok" else "! $pending"
-        permValue.setTextColor(if (pending == 0) Ui.MUTED else Ui.TEXT)
-        permValue.typeface = Ui.body(this, if (pending == 0) 400 else 600)
+        // Nomeia o que falta (cabe uma palavra na linha); o celular mostra a lista completa na checagem de boa-noite.
+        val missing = listOfNotNull(
+            "atividade".takeIf { checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED },
+            "tela".takeIf { !Settings.canDrawOverlays(this) }, // sem isso a tela "Despertando" não abre no disparo
+        )
+        val ok = missing.isEmpty()
+        permValue.text = when (missing.size) {
+            0 -> "ok"
+            1 -> "falta ${missing[0]}"
+            else -> "faltam ${missing.size}"
+        }
+        permValue.setTextColor(if (ok) Ui.MUTED else Ui.TEXT)
+        permValue.typeface = Ui.body(this, if (ok) 400 else 600)
     }
 
     private fun isToday(t: Long): Boolean {

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'alarm.dart';
+import 'check.dart';
 
 /// Lista de alarmes (fonte da verdade), padrões, e o envio ao relógio pela Data Layer.
 class AlarmRepo extends ChangeNotifier {
@@ -125,9 +126,8 @@ class AlarmRepo extends ChangeNotifier {
     return sent != 0 && ack?['sentTs'] == sent;
   }
 
-  /// Problemas que podem fazer o alarme falhar, reportados pelo próprio relógio.
-  List<String> get problems => [
-        if (ack?['activity'] == false) 'Atividade física negada no relógio. Abra o Pulso no relógio e permita.',
-        if (ack?['battery'] == false) 'Bateria com restrição no relógio. O alarme pode falhar de madrugada.',
-      ];
+  /// Hora em que o relógio mandou o estado (bateria e permissões são desse momento).
+  DateTime? get ackAt => ack?['ts'] == null ? null : DateTime.fromMillisecondsSinceEpoch(ack!['ts'] as int);
+
+  List<Check> get checks => nightChecks(connected: connected, synced: synced, ack: ack);
 }

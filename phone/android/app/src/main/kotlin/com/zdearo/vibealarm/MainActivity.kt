@@ -43,10 +43,15 @@ class MainActivity : FlutterActivity() {
                             val m = DataMapItem.fromDataItem(item).dataMap
                             mapOf(
                                 "sentTs" to m.getLong("sentTs"),
+                                "ts" to m.getLong("ts"),
                                 "count" to m.getInt("count"),
                                 "level" to m.getInt("level"),
                                 "activity" to m.getBoolean("activity"),
                                 "battery" to m.getBoolean("battery"),
+                                // Relógio com versão antiga não manda estes: null = desconhecido, não "negado".
+                                "overlay" to if (m.containsKey("overlay")) m.getBoolean("overlay") else null,
+                                "notifications" to if (m.containsKey("notifications")) m.getBoolean("notifications") else null,
+                                "scan" to if (m.containsKey("scan")) m.getBoolean("scan") else null,
                             )
                         }
                         buffer.release()
