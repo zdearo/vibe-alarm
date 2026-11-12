@@ -7,7 +7,7 @@ const text = Color(0xFFE4E4E4); // texto e ícones ativos (Silver Mist)
 const muted = Color(0xFF9A9A9A); // texto secundário
 const accent = Color(0xFF2B3B79); // ação e estado ligado (Abyss Blue); sempre com `text` por cima
 
-// Espaçamento: 4 · 8 · 16 · 24 · 32 · 48. Raios: 16 e pílula.
+// Espaçamento: 4 · 8 · 16 · 24 · 32 · 48. Raios por papel: 16 em grupos e folhas, 8 em botões; lista sem raio.
 const s1 = 4.0, s2 = 8.0, s3 = 16.0, s4 = 24.0, s5 = 32.0, s6 = 48.0;
 const radius = 16.0;
 
@@ -54,15 +54,6 @@ ThemeData buildTheme() {
       trackColor: pick(accent, ink),
       thumbColor: pick(text, muted),
       trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
-    ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: surface,
-      indicatorColor: accent,
-      height: 72,
-      labelTextStyle: WidgetStateProperty.resolveWith(
-        (s) => body(12, color: s.contains(WidgetState.selected) ? text : muted, bold: s.contains(WidgetState.selected)),
-      ),
-      iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(color: s.contains(WidgetState.selected) ? text : muted)),
     ),
   );
 }

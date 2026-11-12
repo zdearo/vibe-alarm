@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'alarm.dart';
+import 'check.dart';
 import 'repo.dart';
 import 'theme.dart';
 
@@ -35,6 +36,7 @@ Future<int?> pickOption(BuildContext context, String title, Map<int, String> opt
     showModalBottomSheet<int>(
       context: context,
       backgroundColor: surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(radius))),
       builder: (_) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(s4),
@@ -44,8 +46,8 @@ Future<int?> pickOption(BuildContext context, String title, Map<int, String> opt
             for (final e in options.entries)
               InkWell(
                 onTap: () => Navigator.pop(context, e.key),
-                child: SizedBox(
-                  height: s6,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: s6),
                   child: Row(children: [
                     Expanded(child: Text(e.value, style: body(16, bold: e.key == current))),
                     if (e.key == current) const Icon(Icons.check, color: text),
@@ -87,8 +89,8 @@ class ValueRow extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: s3),
-          child: SizedBox(
-            height: s6,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: s6),
             child: Row(children: [
               Expanded(child: Text(name, style: body(16, bold: true))),
               Text(value, style: body(16, color: muted)),
@@ -108,8 +110,6 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> with WidgetsBindingObserver {
-  int tab = 0;
-
   @override
   void initState() {
     super.initState();
@@ -134,57 +134,142 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
         builder: (context, _) => Scaffold(
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(s4, s4, s4, 0),
-              child: tab == 0 ? AlarmsBody(widget.repo) : SettingsBody(widget.repo),
+              padding: const EdgeInsets.fromLTRB(s4, s3, s4, 0),
+              child: AlarmsBody(widget.repo),
             ),
           ),
-          floatingActionButton: tab == 0
-              ? FloatingActionButton.extended(
-                  backgroundColor: accent,
-                  foregroundColor: text,
-                  elevation: 0,
-                  shape: const StadiumBorder(),
-                  icon: const Icon(Icons.add),
-                  label: Text('Novo alarme', style: body(16, bold: true)),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditPage(repo: widget.repo))),
-                )
-              : null,
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: tab,
-            onDestinationSelected: (i) => setState(() => tab = i),
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.alarm), label: 'Alarmes'),
-              NavigationDestination(icon: Icon(Icons.tune), label: 'Ajustes'),
-            ],
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(s4, s2, s4, s3),
+              child: PrimaryButton(
+                'Novo alarme',
+                () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditPage(repo: widget.repo))),
+              ),
+            ),
           ),
         ),
       );
 }
 
-class SyncChip extends StatelessWidget {
-  const SyncChip(this.repo, {super.key});
+/// A única ação em accent de cada tela.
+class PrimaryButton extends StatelessWidget {
+  const PrimaryButton(this.label, this.onPressed, {super.key});
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => FilledButton(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: accent,
+          foregroundColor: text,
+          minimumSize: const Size.fromHeight(56),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(s2)),
+        ),
+        child: Text(label, style: body(16, bold: true)),
+      );
+}
+
+/// Checagem de boa-noite, no topo da lista: uma linha quando está tudo certo, os problemas por extenso quando não.
+class NightCheck extends StatelessWidget {
+  const NightCheck(this.repo, {super.key});
   final AlarmRepo repo;
 
   @override
   Widget build(BuildContext context) {
-    final (icon, label) = repo.sendError != null
-        ? (Icons.error_outline, 'Falha ao enviar')
-        : !repo.connected
-            ? (Icons.link_off, 'Relógio não encontrado')
-            : repo.synced
-                ? (Icons.check, 'Relógio sincronizado')
-                : (Icons.sync, 'Enviando…');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: s2, vertical: s1),
-      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(999)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 16, color: text),
-        const SizedBox(width: s1),
-        Text(label, style: body(12, bold: true)),
-      ]),
+    final checks = repo.checks;
+    final issues = checks.where((c) => c.level != Level.ok).toList();
+    final level = repo.level;
+    final summary = issues.isEmpty
+        ? 'Tudo pronto${level != null ? ' · relógio $level%' : ''}'
+        : issues.length == 1
+            ? '1 ponto pode fazer o alarme falhar'
+            : '${issues.length} pontos podem fazer o alarme falhar';
+    return Semantics(
+      button: true,
+      label: '$summary. Toque para ver a checagem completa',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => showChecks(context, repo),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: s2),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(child: Text(summary, style: body(14, color: issues.isEmpty ? muted : text, bold: issues.isNotEmpty))),
+              const Icon(Icons.chevron_right, size: 16, color: muted),
+            ]),
+            for (final c in issues) ...[
+              const SizedBox(height: s2),
+              _IssueLine(c),
+            ],
+          ]),
+        ),
+      ),
     );
   }
 }
+
+/// Problema: barra à esquerda (falha em text, aviso em muted) e o texto diz a gravidade; não depende só de cor.
+class _IssueLine extends StatelessWidget {
+  const _IssueLine(this.c);
+  final Check c;
+
+  @override
+  Widget build(BuildContext context) => IntrinsicHeight(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Container(width: 2, color: c.level == Level.fail ? text : muted),
+          const SizedBox(width: s3),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${c.name}: ${c.value}', style: body(14, bold: true)),
+              if (c.fix != null) Text(c.fix!, style: body(14, color: muted)),
+            ]),
+          ),
+        ]),
+      );
+}
+
+Future<void> showChecks(BuildContext context, AlarmRepo repo) => showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(radius))),
+      builder: (_) => ListenableBuilder(
+        listenable: repo,
+        builder: (context, _) {
+          final at = repo.ackAt;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(s4),
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text('Antes de dormir', style: display(24)),
+                const SizedBox(height: s1),
+                Text(
+                  at == null ? 'O relógio ainda não respondeu.' : 'Estado enviado pelo relógio às ${fmtTime(at.hour, at.minute, repo.hour24)}.',
+                  style: body(14, color: muted),
+                ),
+                const SizedBox(height: s3),
+                for (final c in repo.checks)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: s6),
+                    child: Row(children: [
+                      Expanded(child: Text(c.name, style: body(16))),
+                      Text(c.value, style: body(16, color: c.level == Level.ok ? muted : text, bold: c.level != Level.ok)),
+                    ]),
+                  ),
+                if (repo.sendError != null) ...[
+                  const SizedBox(height: s2),
+                  Text(repo.sendError!, style: body(14, color: muted)),
+                ],
+                const SizedBox(height: s4),
+                // Reenviar a lista faz o relógio responder de novo com bateria e permissões atuais.
+                PrimaryButton('Verificar de novo', repo.sync),
+              ]),
+            ),
+          );
+        },
+      ),
+    );
 
 class AlarmsBody extends StatelessWidget {
   const AlarmsBody(this.repo, {super.key});
@@ -204,23 +289,36 @@ class AlarmsBody extends StatelessWidget {
     }
     final sorted = [...repo.alarms]..sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text('Alarmes', style: display(24)),
-        SyncChip(repo),
+      Row(children: [
+        Expanded(child: Text('Alarmes', style: display(24))),
+        IconButton(
+          tooltip: 'Ajustes',
+          icon: const Icon(Icons.tune, color: muted),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(repo))),
+        ),
       ]),
-      const SizedBox(height: s1),
-      Text(
-        nextA == null ? 'Nenhum alarme ativo' : 'Próximo: ${fmtTime(nextA.hour, nextA.minute, repo.hour24)} · ${inLabel(nextT!.difference(now))}',
-        style: body(14, color: muted),
-      ),
-      const SizedBox(height: s4),
+      const SizedBox(height: s3),
+      // O próximo disparo é a informação principal da tela: maior que qualquer item da lista.
+      if (nextA != null) ...[
+        Text('Próximo · ${inLabel(nextT!.difference(now))}', style: body(14, color: muted)),
+        const SizedBox(height: s1),
+        Text(fmtTime(nextA.hour, nextA.minute, repo.hour24), style: display(72)),
+      ] else
+        Text('Nenhum alarme ativo', style: body(16, color: muted)),
+      const SizedBox(height: s2),
+      NightCheck(repo),
+      const SizedBox(height: s3),
+      const Divider(height: 1, thickness: 1, color: surface),
       Expanded(
         child: sorted.isEmpty
-            ? Text('Toque em “Novo alarme” para criar o primeiro.', style: body(16, color: muted))
+            ? Padding(
+                padding: const EdgeInsets.only(top: s4),
+                child: Text('Nenhum alarme ainda.', style: body(16, color: muted)),
+              )
             : ListView.separated(
-                padding: const EdgeInsets.only(bottom: 96),
+                padding: const EdgeInsets.only(bottom: s4),
                 itemCount: sorted.length,
-                separatorBuilder: (_, _) => const SizedBox(height: s2),
+                separatorBuilder: (_, _) => const Divider(height: 1, thickness: 1, color: surface),
                 itemBuilder: (_, i) => _AlarmTile(repo, sorted[i]),
               ),
       ),
@@ -236,28 +334,24 @@ class _AlarmTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final time = fmtTime(a.hour, a.minute, repo.hour24);
-    return Material(
-      color: surface,
-      borderRadius: BorderRadius.circular(radius),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(radius),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditPage(repo: repo, alarm: a))),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(s3, s3, s3, s3),
-          child: Row(children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(time, style: display(40, color: a.enabled ? text : muted)),
-                const SizedBox(height: s1),
-                Text([if (a.label.isNotEmpty) a.label, daysLabel(a.days)].join(' · '), style: body(14, color: muted)),
-              ]),
-            ),
-            Semantics(
-              label: 'Ativar alarme das $time',
-              child: Switch(value: a.enabled, onChanged: (_) => repo.toggle(a.id)),
-            ),
-          ]),
-        ),
+    // Linha da lista, sem cartão: a hora carrega a linha, o resto fica em muted.
+    return InkWell(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EditPage(repo: repo, alarm: a))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: s3),
+        child: Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(time, style: display(40, color: a.enabled ? text : muted)),
+              const SizedBox(height: s1),
+              Text([if (a.label.isNotEmpty) a.label, daysLabel(a.days)].join(' · '), style: body(14, color: muted)),
+            ]),
+          ),
+          Semantics(
+            label: 'Ativar alarme das $time',
+            child: Switch(value: a.enabled, onChanged: (_) => repo.toggle(a.id)),
+          ),
+        ]),
       ),
     );
   }
@@ -368,7 +462,7 @@ class _EditPageState extends State<EditPage> {
                   ]),
                   const SizedBox(height: s4),
                   Container(
-                    height: s6,
+                    constraints: const BoxConstraints(minHeight: s6),
                     padding: const EdgeInsets.symmetric(horizontal: s3),
                     decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(radius)),
                     child: Row(children: [
@@ -385,7 +479,7 @@ class _EditPageState extends State<EditPage> {
                     ]),
                   ),
                   const SizedBox(height: s4),
-                  Text('DESPERTAR', style: body(12, color: muted)),
+                  Text('Despertar', style: body(14, color: muted, bold: true)),
                   const SizedBox(height: s2),
                   Group(children: [
                     ValueRow('Intensidade', intensities[a.intensity]!, onTap: () => _pick('Intensidade', intensities, a.intensity, (v) => a.copyWith(intensity: v))),
@@ -403,11 +497,7 @@ class _EditPageState extends State<EditPage> {
               ),
             ),
             const SizedBox(height: s3),
-            FilledButton(
-              onPressed: _save,
-              style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: text, minimumSize: const Size.fromHeight(56), shape: const StadiumBorder()),
-              child: Text('Salvar alarme', style: body(16, bold: true)),
-            ),
+            PrimaryButton('Salvar alarme', _save),
           ]),
         ),
       ),
@@ -415,82 +505,27 @@ class _EditPageState extends State<EditPage> {
   }
 }
 
-class SettingsBody extends StatelessWidget {
-  const SettingsBody(this.repo, {super.key});
+class SettingsPage extends StatelessWidget {
+  const SettingsPage(this.repo, {super.key});
   final AlarmRepo repo;
 
   @override
-  Widget build(BuildContext context) {
-    final problems = repo.problems;
-    return ListView(padding: const EdgeInsets.only(bottom: s4), children: [
-      Text('Ajustes', style: display(24)),
-      const SizedBox(height: s3),
-      // O único bloco em accent: algo que pode fazer o alarme falhar.
-      if (problems.isNotEmpty) ...[
-        Container(
-          padding: const EdgeInsets.all(s3),
-          decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(radius)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.warning_amber, color: text),
-              const SizedBox(width: s2),
-              Text('Atenção no relógio', style: body(16, bold: true)),
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(backgroundColor: ink, title: Text('Ajustes', style: display(24))),
+        body: ListenableBuilder(
+          listenable: repo,
+          builder: (context, _) => ListView(padding: const EdgeInsets.all(s4), children: [
+            Group(children: [
+              ValueRow(repo.watchName ?? 'Relógio', repo.connected ? 'conectado' : 'não encontrado', onTap: () => showChecks(context, repo)),
             ]),
-            for (final p in problems) ...[
-              const SizedBox(height: s1),
-              Text(p, style: body(14)),
-            ],
+            const SizedBox(height: s4),
+            Group(children: [
+              ValueRow('Padrões de novo alarme', '', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DefaultsPage(repo)))),
+              ValueRow('Formato de hora', repo.hour24 ? '24 h' : '12 h', onTap: () => repo.setHour24(!repo.hour24)),
+            ]),
           ]),
         ),
-        const SizedBox(height: s3),
-      ],
-      Container(
-        padding: const EdgeInsets.all(s3),
-        decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(radius)),
-        child: Column(children: [
-          Row(children: [
-            Container(
-              width: s6,
-              height: s6,
-              decoration: const BoxDecoration(shape: BoxShape.circle, color: ink),
-              child: const Icon(Icons.watch_outlined, color: text),
-            ),
-            const SizedBox(width: s3),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(repo.watchName ?? 'Relógio', style: body(16, bold: true)),
-                Text(
-                  repo.connected ? 'Conectado${repo.level != null ? ' · bateria ${repo.level}%' : ''}' : 'Não encontrado',
-                  style: body(14, color: muted),
-                ),
-              ]),
-            ),
-          ]),
-          const SizedBox(height: s3),
-          Row(children: [
-            Expanded(
-              child: Text(
-                repo.sendError ?? (repo.synced ? 'Lista confirmada pelo relógio' : 'Aguardando confirmação'),
-                style: body(14, color: muted),
-              ),
-            ),
-            FilledButton(
-              onPressed: repo.sync,
-              style: FilledButton.styleFrom(backgroundColor: ink, foregroundColor: text, minimumSize: const Size(0, 44), shape: const StadiumBorder()),
-              child: Text('Sincronizar', style: body(14, bold: true)),
-            ),
-          ]),
-        ]),
-      ),
-      const SizedBox(height: s4),
-      Text('GERAL', style: body(12, color: muted)),
-      const SizedBox(height: s2),
-      Group(children: [
-        ValueRow('Padrões de novo alarme', '', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DefaultsPage(repo)))),
-        ValueRow('Formato de hora', repo.hour24 ? '24 h' : '12 h', onTap: () => repo.setHour24(!repo.hour24)),
-      ]),
-    ]);
-  }
+      );
 }
 
 class DefaultsPage extends StatelessWidget {

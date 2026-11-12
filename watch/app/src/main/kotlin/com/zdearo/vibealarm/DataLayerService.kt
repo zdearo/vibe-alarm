@@ -1,9 +1,11 @@
 package com.zdearo.vibealarm
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.pm.PackageManager
 import android.os.BatteryManager
 import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
@@ -39,11 +41,16 @@ class DataLayerService : WearableListenerService() {
             dataMap.putLong("ts", System.currentTimeMillis())
             dataMap.putInt("count", count)
             dataMap.putInt("level", level)
-            dataMap.putBoolean("activity", checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED)
+            dataMap.putBoolean("activity", granted(Manifest.permission.ACTIVITY_RECOGNITION))
             dataMap.putBoolean("battery", power.isIgnoringBatteryOptimizations(packageName))
+            dataMap.putBoolean("overlay", Settings.canDrawOverlays(this@DataLayerService)) // sem isso a tela "Despertando" não abre
+            dataMap.putBoolean("notifications", getSystemService(NotificationManager::class.java).areNotificationsEnabled())
+            dataMap.putBoolean("scan", granted(Manifest.permission.BLUETOOTH_SCAN)) // só a trava pelo celular depende disso
         }.asPutDataRequest().setUrgent()
         Wearable.getDataClient(this).putDataItem(req)
     }
+
+    private fun granted(permission: String) = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
     private companion object {
         const val TAG = "DataLayerService"
