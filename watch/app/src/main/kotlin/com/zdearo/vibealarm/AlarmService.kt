@@ -94,7 +94,52 @@ class AlarmService : Service(), SensorEventListener {
             return START_NOT_STICKY
         }
         val timeoutMs = if (test) TEST_MS else alarm.timeoutMin * 60_000L
+        if (test) begin(alarm, true, timeoutMs) else startIfWorn(alarm, timeoutMs)
+        return START_NOT_STICKY
+    }
 
+    /**
+     * Com o relógio fora do pulso a vibração não acorda ninguém: não dispara e avisa por notificação.
+     * Na dúvida (sem sensor, sem resposta em 1,5 s) o alarme toca: errar para o lado de tocar é o seguro.
+     */
+    private fun startIfWorn(alarm: Alarm, timeoutMs: Long) {
+        val sensors = getSystemService(SensorManager::class.java)
+        val offbody = sensors.getDefaultSensor(Sensor.TYPE_LOW_LATENCY_OFFBODY_DETECT)
+        var decided = false
+        val decide = fun(worn: Boolean) {
+            if (decided) return
+            decided = true
+            handler.removeCallbacksAndMessages(null)
+            if (worn) begin(alarm, false, timeoutMs) else skipNotWorn(alarm)
+        }
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                sensors.unregisterListener(this)
+                decide(event.values[0] != 0f) // 0 = fora do pulso, 1 = no pulso
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+        }
+        if (offbody == null || !sensors.registerListener(listener, offbody, SensorManager.SENSOR_DELAY_NORMAL)) {
+            decide(true)
+            return
+        }
+        handler.postDelayed({ sensors.unregisterListener(listener); decide(true) }, 1_500)
+    }
+
+    private fun skipNotWorn(alarm: Alarm) {
+        Log.w(TAG, "Relógio fora do pulso: alarme das %02d:%02d não disparou".format(alarm.hour, alarm.minute))
+        getSystemService(NotificationManager::class.java).notify(
+            NOTIFICATION_ID + 1,
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                .setContentTitle("Alarme não tocou")
+                .setContentText("%02d:%02d: o relógio estava fora do pulso".format(alarm.hour, alarm.minute))
+                .build(),
+        )
+        stopAlarm()
+    }
+
+    private fun begin(alarm: Alarm, test: Boolean, timeoutMs: Long) {
         wakeLock = getSystemService(PowerManager::class.java)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "vibealarm:alarm")
             .apply { acquire(timeoutMs + 5_000) }
@@ -151,7 +196,6 @@ class AlarmService : Service(), SensorEventListener {
         ContextCompat.registerReceiver(this, screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF), ContextCompat.RECEIVER_NOT_EXPORTED)
 
         handler.postDelayed(::stopAlarm, timeoutMs)
-        return START_NOT_STICKY
     }
 
     override fun onSensorChanged(event: SensorEvent) {

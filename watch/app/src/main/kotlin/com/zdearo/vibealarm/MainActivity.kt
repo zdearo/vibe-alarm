@@ -110,7 +110,7 @@ class MainActivity : Activity() {
 
     // Página 1 do mockup: horário, rótulo em muted e o botão "Pular este".
     private fun nextPage(): View {
-        time = label(48f, Ui.TEXT, Ui.display(this), spacing = -0.04f)
+        time = label(40f, Ui.TEXT, Ui.display(this), spacing = -0.04f)
         sub = label(14f, Ui.MUTED, Ui.body(this, 400))
         skip = label(16f, Ui.TEXT, Ui.body(this, 600)).apply {
             background = pill(Ui.SURFACE)
